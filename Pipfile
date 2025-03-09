@@ -13,6 +13,7 @@ langchain-openai = "*"
 langchain-community = "*"
 langchain = "*"
 langchain-ollama = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
