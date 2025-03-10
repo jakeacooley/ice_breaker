@@ -12,8 +12,8 @@ isort = "*"
 langchain-openai = "*"
 langchain-community = "*"
 langchain = "*"
-langchain-ollama = "*"
 python-dotenv = "*"
+langchain-ollama = "*"
 
 [dev-packages]
 

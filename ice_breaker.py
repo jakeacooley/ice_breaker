@@ -1,51 +1,44 @@
-from typing import Tuple
-from agents.linkedin_lookup_agent import lookup as linkedin_lookup_agent
-from agents.twitter_lookup_agent import lookup as twitter_lookup_agent
-from chains.custom_chains import (
-    get_summary_chain,
-    get_interests_chain,
-    get_ice_breaker_chain,
-)
-from third_parties.linkedin import scrape_linkedin_profile
-from third_parties.twitter import scrape_user_tweets, scrape_user_tweets_mock
-from output_parsers import (
-    Summary,
-    IceBreaker,
-    TopicOfInterest,
-)
+from dotenv import load_dotenv
 
+# import os
+from langchain_core.prompts import PromptTemplate
+# from langchain_openai import ChatOpenAI
+# from langchain_ollama import ChatOllama
+from langchain_google_vertexai import ChatVertexAI
+from langchain_core.output_parsers import StrOutputParser
 
-def ice_break_with(
-    name: str,
-) -> Tuple[Summary, TopicOfInterest, IceBreaker, str]:
-    linkedin_username = linkedin_lookup_agent(name=name)
-    linkedin_data = scrape_linkedin_profile(linkedin_profile_url=linkedin_username)
-
-    twitter_username = twitter_lookup_agent(name=name)
-    tweets = scrape_user_tweets_mock(username=twitter_username)
-
-    summary_chain = get_summary_chain()
-    summary_and_facts: Summary = summary_chain.invoke(
-        input={"information": linkedin_data, "twitter_posts": tweets},
-    )
-
-    interests_chain = get_interests_chain()
-    interests: TopicOfInterest = interests_chain.invoke(
-        input={"information": linkedin_data, "twitter_posts": tweets}
-    )
-
-    ice_breaker_chain = get_ice_breaker_chain()
-    ice_breakers: IceBreaker = ice_breaker_chain.invoke(
-        input={"information": linkedin_data, "twitter_posts": tweets}
-    )
-
-    return (
-        summary_and_facts,
-        interests,
-        ice_breakers,
-        linkedin_data.get("photoUrl"),
-    )
-
+information = """
+Elon Reeve Musk (/ˈiːlɒn/ EE-lon; born June 28, 1971) is a businessman known for his key roles in Tesla, Inc., SpaceX, and Twitter (which he rebranded as X). Since 2025, he has been a senior advisor to United States president Donald Trump and the de facto head of the Department of Government Efficiency (DOGE). Musk is the wealthiest person in the world; as of March 2025, Forbes estimates his net worth to be US$343 billion.
+"""
 
 if __name__ == "__main__":
+    load_dotenv()
+
+    # print(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    print("Hello Langchain!")
+
+    summary_template = """
+    given the Linkedin information {information} about a person I want you to create:
+    1. A short summary
+    2. two interesting facts about them
+    """
+
+    summary_prompt_template = PromptTemplate(
+        input_variables=["information"], template=summary_template
+    )
+
+    # llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    # llm = ChatOllama(model="mistral")
+    llm = ChatVertexAI(
+        model="gemini-1.5-pro-001",
+        temperature=0.2,  # Adjust temperature for desired randomness
+        max_output_tokens=100,  # Set a limit for the response length
+    )
+
+    chain = summary_prompt_template | llm | StrOutputParser()
+
+    res = chain.invoke(input={"information": information})
+
+    print(res)
+
     pass
